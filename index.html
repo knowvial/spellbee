@@ -358,441 +358,454 @@
     </div>
 
     <script>
-        class SpellingBeeApp {
-            constructor() {
-                this.words = [];
-                this.currentWordIndex = 0;
-                this.sessionWords = [];
-                this.sessionResults = [];
-                this.correctCount = 0;
-                this.incorrectCount = 0;
-                
-                // Speech recognition
-                this.recognition = null;
-                this.isListening = false;
-                
-                // Speech synthesis
-                this.synth = window.speechSynthesis;
-                
-                // DOM elements
-                this.elements = {
-                    setupSection: document.getElementById('setupSection'),
-                    practiceSection: document.getElementById('practiceSection'),
-                    summarySection: document.getElementById('summarySection'),
-                    wordInput: document.getElementById('wordInput'),
-                    fileInput: document.getElementById('fileInput'),
-                    fileStatus: document.getElementById('fileStatus'),
-                    startBtn: document.getElementById('startBtn'),
-                    wordDisplay: document.getElementById('wordDisplay'),
-                    statusDisplay: document.getElementById('statusDisplay'),
-                    resultDisplay: document.getElementById('resultDisplay'),
-                    wordCount: document.getElementById('wordCount'),
-                    totalWords: document.getElementById('totalWords'),
-                    correctCount: document.getElementById('correctCount'),
-                    incorrectCount: document.getElementById('incorrectCount'),
-                    progressFill: document.getElementById('progressFill'),
-                    hearWordBtn: document.getElementById('hearWordBtn'),
-                    recordBtn: document.getElementById('recordBtn'),
-                    skipBtn: document.getElementById('skipBtn'),
-                    stopBtn: document.getElementById('stopBtn'),
-                    resultsTable: document.getElementById('resultsTable'),
-                    resultsList: document.getElementById('resultsList'),
-                    summaryTotal: document.getElementById('summaryTotal'),
-                    summaryCorrect: document.getElementById('summaryCorrect'),
-                    summaryIncorrect: document.getElementById('summaryIncorrect'),
-                    summaryAccuracy: document.getElementById('summaryAccuracy'),
-                    reviewList: document.getElementById('reviewList'),
-                    downloadBtn: document.getElementById('downloadBtn'),
-                    newSessionBtn: document.getElementById('newSessionBtn'),
-                    practiceMissedBtn: document.getElementById('practiceMissedBtn'),
-                    difficultySelect: document.getElementById('difficultySelect'),
-                    sessionSize: document.getElementById('sessionSize'),
-                    repeatErrors: document.getElementById('repeatErrors'),
-                    promptType: document.getElementById('promptType'),
-                    voiceWave: document.getElementById('voiceWave')
-                };
-                
-                // Initialize
-                this.initSpeechRecognition();
-                this.bindEvents();
-            }
-            
-            initSpeechRecognition() {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (SpeechRecognition) {
-                    this.recognition = new SpeechRecognition();
-                    this.recognition.continuous = false;
-                    this.recognition.interimResults = false;
-                    this.recognition.lang = 'en-US';
+        // Wait for DOM to be fully loaded before initializing
+        document.addEventListener('DOMContentLoaded', function() {
+            class SpellingBeeApp {
+                constructor() {
+                    this.words = [];
+                    this.currentWordIndex = 0;
+                    this.sessionWords = [];
+                    this.sessionResults = [];
+                    this.correctCount = 0;
+                    this.incorrectCount = 0;
                     
-                    this.recognition.onresult = (event) => {
-                        const transcript = event.results[0][0].transcript;
-                        this.checkSpelling(transcript);
-                    };
+                    // Speech recognition
+                    this.recognition = null;
+                    this.isListening = false;
                     
-                    this.recognition.onend = () => {
-                        this.isListening = false;
-                        this.elements.statusDisplay.textContent = '';
-                        this.elements.statusDisplay.classList.remove('listening');
-                        this.elements.voiceWave.classList.remove('active-wave');
-                        this.elements.recordBtn.textContent = 'Record Answer';
-                    };
+                    // Speech synthesis
+                    this.synth = window.speechSynthesis;
                     
-                    this.recognition.onerror = (event) => {
-                        console.error('Speech recognition error', event.error);
-                        this.elements.statusDisplay.textContent = `Error: ${event.error}. Please try again.`;
-                        this.isListening = false;
-                        this.elements.voiceWave.classList.remove('active-wave');
-                        this.elements.recordBtn.textContent = 'Record Answer';
+                    // DOM elements - ensure these match the IDs in the HTML
+                    this.elements = {
+                        setupSection: document.getElementById('setupSection'),
+                        practiceSection: document.getElementById('practiceSection'),
+                        summarySection: document.getElementById('summarySection'),
+                        wordInput: document.getElementById('wordInput'),
+                        fileInput: document.getElementById('fileInput'),
+                        fileStatus: document.getElementById('fileStatus'),
+                        startBtn: document.getElementById('startBtn'),
+                        wordDisplay: document.getElementById('wordDisplay'),
+                        statusDisplay: document.getElementById('statusDisplay'),
+                        resultDisplay: document.getElementById('resultDisplay'),
+                        wordCount: document.getElementById('wordCount'),
+                        totalWords: document.getElementById('totalWords'),
+                        correctCount: document.getElementById('correctCount'),
+                        incorrectCount: document.getElementById('incorrectCount'),
+                        progressFill: document.getElementById('progressFill'),
+                        hearWordBtn: document.getElementById('hearWordBtn'),
+                        recordBtn: document.getElementById('recordBtn'),
+                        skipBtn: document.getElementById('skipBtn'),
+                        stopBtn: document.getElementById('stopBtn'),
+                        resultsTable: document.getElementById('resultsTable'),
+                        resultsList: document.getElementById('resultsList'),
+                        summaryTotal: document.getElementById('summaryTotal'),
+                        summaryCorrect: document.getElementById('summaryCorrect'),
+                        summaryIncorrect: document.getElementById('summaryIncorrect'),
+                        summaryAccuracy: document.getElementById('summaryAccuracy'),
+                        reviewList: document.getElementById('reviewList'),
+                        downloadBtn: document.getElementById('downloadBtn'),
+                        newSessionBtn: document.getElementById('newSessionBtn'),
+                        practiceMissedBtn: document.getElementById('practiceMissedBtn'),
+                        difficultySelect: document.getElementById('difficultySelect'),
+                        sessionSize: document.getElementById('sessionSize'),
+                        repeatErrors: document.getElementById('repeatErrors'),
+                        promptType: document.getElementById('promptType'),
+                        voiceWave: document.getElementById('voiceWave')
                     };
-                } else {
-                    alert('Speech recognition is not supported in your browser. Please try Chrome or Edge.');
-                    this.elements.recordBtn.disabled = true;
-                }
-            }
-            
-            bindEvents() {
-                // Setup events
-                this.elements.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-                this.elements.startBtn.addEventListener('click', () => this.startSession());
-                
-                // Practice events
-                this.elements.hearWordBtn.addEventListener('click', () => this.speakCurrentWord());
-                this.elements.recordBtn.addEventListener('click', () => this.toggleListening());
-                this.elements.skipBtn.addEventListener('click', () => this.skipWord());
-                this.elements.stopBtn.addEventListener('click', () => this.endSession());
-                
-                // Summary events
-                this.elements.downloadBtn.addEventListener('click', () => this.downloadResults());
-                this.elements.newSessionBtn.addEventListener('click', () => this.resetToSetup());
-                this.elements.practiceMissedBtn.addEventListener('click', () => this.practiceMissedWords());
-            }
-            
-            handleFileUpload(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                
-                this.elements.fileStatus.textContent = 'Reading file...';
-                
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const content = e.target.result;
-                    this.elements.wordInput.value = content;
-                    this.elements.fileStatus.textContent = 'File loaded successfully.';
-                };
-                reader.onerror = () => {
-                    this.elements.fileStatus.textContent = 'Error reading file.';
-                };
-                reader.readAsText(file);
-            }
-            
-            parseWordList() {
-                const text = this.elements.wordInput.value;
-                if (!text.trim()) {
-                    alert('Please enter some words or upload a file.');
-                    return false;
+
+                    // Validate that all elements were found
+                    let missingElements = [];
+                    for (const [key, element] of Object.entries(this.elements)) {
+                        if (!element) {
+                            missingElements.push(key);
+                        }
+                    }
+                    if (missingElements.length > 0) {
+                        console.error('Missing DOM elements:', missingElements);
+                        alert('App initialization error: Some UI elements could not be found. See console for details.');
+                        return;
+                    }
+                    
+                    // Initialize
+                    this.initSpeechRecognition();
+                    this.bindEvents();
                 }
                 
-                // Parse words (remove empty lines and trim)
-                this.words = text.split('\n')
-                    .map(word => word.trim())
-                    .filter(word => word.length > 0);
-                
-                if (this.words.length === 0) {
-                    alert('No valid words found. Please check your input.');
-                    return false;
-                }
-                
-                return true;
-            }
-            
-            startSession() {
-                if (!this.parseWordList()) return;
-                
-                // Get options
-                const difficulty = this.elements.difficultySelect.value;
-                const sessionSize = parseInt(this.elements.sessionSize.value) || 20;
-                
-                // Sort words according to difficulty
-                let wordList = [...this.words];
-                if (difficulty === 'easy') {
-                    wordList.sort((a, b) => a.length - b.length);
-                } else if (difficulty === 'hard') {
-                    wordList.sort((a, b) => b.length - a.length);
-                } else {
-                    // Random order
-                    wordList.sort(() => Math.random() - 0.5);
-                }
-                
-                // Choose session words
-                this.sessionWords = wordList.slice(0, Math.min(sessionSize, wordList.length));
-                this.currentWordIndex = 0;
-                this.sessionResults = [];
-                this.correctCount = 0;
-                this.incorrectCount = 0;
-                
-                // Setup UI
-                this.elements.wordCount.textContent = 0;
-                this.elements.totalWords.textContent = this.sessionWords.length;
-                this.elements.correctCount.textContent = 0;
-                this.elements.incorrectCount.textContent = 0;
-                this.elements.progressFill.style.width = '0%';
-                this.elements.resultsList.innerHTML = '';
-                
-                // Show practice section, hide setup
-                this.elements.setupSection.classList.add('hidden');
-                this.elements.practiceSection.classList.remove('hidden');
-                this.elements.summarySection.classList.add('hidden');
-                this.elements.resultsTable.classList.add('hidden');
-                
-                // Start with first word
-                this.showNextWord();
-            }
-            
-            showNextWord() {
-                if (this.currentWordIndex >= this.sessionWords.length) {
-                    this.endSession();
-                    return;
-                }
-                
-                const currentWord = this.sessionWords[this.currentWordIndex];
-                // Hide the word during testing
-                this.elements.wordDisplay.textContent = "Word #" + (this.currentWordIndex + 1);
-                this.elements.statusDisplay.textContent = 'Press "Hear Word" or "Record Answer"';
-                this.elements.resultDisplay.textContent = '';
-                this.elements.resultDisplay.className = 'result';
-                
-                // Auto speak the word if option is selected
-                setTimeout(() => this.speakCurrentWord(), 500);
-            }
-            
-            speakCurrentWord() {
-                if (this.synth.speaking) {
-                    this.synth.cancel();
-                }
-                
-                const currentWord = this.sessionWords[this.currentWordIndex];
-                const utterance = new SpeechSynthesisUtterance(currentWord);
-                utterance.rate = 0.9;
-                this.synth.speak(utterance);
-            }
-            
-            toggleListening() {
-                if (this.isListening) {
-                    this.recognition.stop();
-                } else {
-                    this.startListening();
-                }
-            }
-            
-            startListening() {
-                if (!this.recognition) return;
-                
-                try {
-                    this.recognition.start();
-                    this.isListening = true;
-                    this.elements.statusDisplay.textContent = 'Listening... Spell the word...';
-                    this.elements.statusDisplay.classList.add('listening');
-                    this.elements.recordBtn.textContent = 'Stop Recording';
-                    this.elements.voiceWave.classList.add('active-wave');
-                } catch (error) {
-                    console.error('Speech recognition error', error);
-                    this.elements.statusDisplay.textContent = 'Error starting recognition. Please try again.';
-                }
-            }
-            
-            checkSpelling(spokenText) {
-                const currentWord = this.sessionWords[this.currentWordIndex];
-                
-                // Clean up spoken text (remove spaces, convert to lowercase)
-                const cleanSpoken = spokenText.toLowerCase().replace(/\s+/g, '');
-                
-                // Get letters individually
-                let letters = [];
-                for (const char of cleanSpoken) {
-                    if (/[a-z]/.test(char)) {
-                        letters.push(char);
+                initSpeechRecognition() {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    if (SpeechRecognition) {
+                        this.recognition = new SpeechRecognition();
+                        this.recognition.continuous = false;
+                        this.recognition.interimResults = false;
+                        this.recognition.lang = 'en-US';
+                        
+                        this.recognition.onresult = (event) => {
+                            const transcript = event.results[0][0].transcript;
+                            this.checkSpelling(transcript);
+                        };
+                        
+                        this.recognition.onend = () => {
+                            this.isListening = false;
+                            this.elements.statusDisplay.textContent = '';
+                            this.elements.statusDisplay.classList.remove('listening');
+                            this.elements.voiceWave.classList.remove('active-wave');
+                            this.elements.recordBtn.textContent = 'Record Answer';
+                        };
+                        
+                        this.recognition.onerror = (event) => {
+                            console.error('Speech recognition error', event.error);
+                            this.elements.statusDisplay.textContent = `Error: ${event.error}. Please try again.`;
+                            this.isListening = false;
+                            this.elements.voiceWave.classList.remove('active-wave');
+                            this.elements.recordBtn.textContent = 'Record Answer';
+                        };
+                    } else {
+                        alert('Speech recognition is not supported in your browser. Please try Chrome or Edge.');
+                        this.elements.recordBtn.disabled = true;
                     }
                 }
                 
-                const spokenLetters = letters.join('');
-                const isCorrect = currentWord.toLowerCase() === spokenLetters;
+                bindEvents() {
+                    // Setup events
+                    this.elements.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+                    this.elements.startBtn.addEventListener('click', () => this.startSession());
+                    
+                    // Practice events
+                    this.elements.hearWordBtn.addEventListener('click', () => this.speakCurrentWord());
+                    this.elements.recordBtn.addEventListener('click', () => this.toggleListening());
+                    this.elements.skipBtn.addEventListener('click', () => this.skipWord());
+                    this.elements.stopBtn.addEventListener('click', () => this.endSession());
+                    
+                    // Summary events
+                    this.elements.downloadBtn.addEventListener('click', () => this.downloadResults());
+                    this.elements.newSessionBtn.addEventListener('click', () => this.resetToSetup());
+                    this.elements.practiceMissedBtn.addEventListener('click', () => this.practiceMissedWords());
+                }
                 
-                // Now show the word since we're providing feedback
-                this.elements.wordDisplay.textContent = currentWord;
+                handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    this.elements.fileStatus.textContent = 'Reading file...';
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const content = e.target.result;
+                        this.elements.wordInput.value = content;
+                        this.elements.fileStatus.textContent = 'File loaded successfully.';
+                    };
+                    reader.onerror = () => {
+                        this.elements.fileStatus.textContent = 'Error reading file.';
+                    };
+                    reader.readAsText(file);
+                }
                 
-                // Display result
-                this.elements.resultDisplay.textContent = isCorrect ? 'Correct! ✓' : `Incorrect. You spelled: "${spokenLetters}"`;
-                this.elements.resultDisplay.className = isCorrect ? 'result correct' : 'result incorrect';
+                parseWordList() {
+                    const text = this.elements.wordInput.value;
+                    if (!text.trim()) {
+                        alert('Please enter some words or upload a file.');
+                        return false;
+                    }
+                    
+                    // Parse words (remove empty lines and trim)
+                    this.words = text.split('\n')
+                        .map(word => word.trim())
+                        .filter(word => word.length > 0);
+                    
+                    if (this.words.length === 0) {
+                        alert('No valid words found. Please check your input.');
+                        return false;
+                    }
+                    
+                    return true;
+                }
                 
-                // Update stats
-                if (isCorrect) {
-                    this.correctCount++;
-                    this.elements.correctCount.textContent = this.correctCount;
-                } else {
+                startSession() {
+                    if (!this.parseWordList()) return;
+                    
+                    // Get options
+                    const difficulty = this.elements.difficultySelect.value;
+                    const sessionSize = parseInt(this.elements.sessionSize.value) || 20;
+                    
+                    // Sort words according to difficulty
+                    let wordList = [...this.words];
+                    if (difficulty === 'easy') {
+                        wordList.sort((a, b) => a.length - b.length);
+                    } else if (difficulty === 'hard') {
+                        wordList.sort((a, b) => b.length - a.length);
+                    } else {
+                        // Random order
+                        wordList.sort(() => Math.random() - 0.5);
+                    }
+                    
+                    // Choose session words
+                    this.sessionWords = wordList.slice(0, Math.min(sessionSize, wordList.length));
+                    this.currentWordIndex = 0;
+                    this.sessionResults = [];
+                    this.correctCount = 0;
+                    this.incorrectCount = 0;
+                    
+                    // Setup UI
+                    this.elements.wordCount.textContent = 0;
+                    this.elements.totalWords.textContent = this.sessionWords.length;
+                    this.elements.correctCount.textContent = 0;
+                    this.elements.incorrectCount.textContent = 0;
+                    this.elements.progressFill.style.width = '0%';
+                    this.elements.resultsList.innerHTML = '';
+                    
+                    // Show practice section, hide setup
+                    this.elements.setupSection.classList.add('hidden');
+                    this.elements.practiceSection.classList.remove('hidden');
+                    this.elements.summarySection.classList.add('hidden');
+                    this.elements.resultsTable.classList.add('hidden');
+                    
+                    // Start with first word
+                    this.showNextWord();
+                }
+                
+                showNextWord() {
+                    if (this.currentWordIndex >= this.sessionWords.length) {
+                        this.endSession();
+                        return;
+                    }
+                    
+                    // Hide the word during testing - show only the word number
+                    this.elements.wordDisplay.textContent = "Word #" + (this.currentWordIndex + 1);
+                    this.elements.statusDisplay.textContent = 'Press "Hear Word" or "Record Answer"';
+                    this.elements.resultDisplay.textContent = '';
+                    this.elements.resultDisplay.className = 'result';
+                    
+                    // Auto speak the word if option is selected
+                    setTimeout(() => this.speakCurrentWord(), 500);
+                }
+                
+                speakCurrentWord() {
+                    if (this.synth.speaking) {
+                        this.synth.cancel();
+                    }
+                    
+                    const currentWord = this.sessionWords[this.currentWordIndex];
+                    const utterance = new SpeechSynthesisUtterance(currentWord);
+                    utterance.rate = 0.9;
+                    this.synth.speak(utterance);
+                }
+                
+                toggleListening() {
+                    if (this.isListening) {
+                        this.recognition.stop();
+                    } else {
+                        this.startListening();
+                    }
+                }
+                
+                startListening() {
+                    if (!this.recognition) return;
+                    
+                    try {
+                        this.recognition.start();
+                        this.isListening = true;
+                        this.elements.statusDisplay.textContent = 'Listening... Spell the word...';
+                        this.elements.statusDisplay.classList.add('listening');
+                        this.elements.recordBtn.textContent = 'Stop Recording';
+                        this.elements.voiceWave.classList.add('active-wave');
+                    } catch (error) {
+                        console.error('Speech recognition error', error);
+                        this.elements.statusDisplay.textContent = 'Error starting recognition. Please try again.';
+                    }
+                }
+                
+                checkSpelling(spokenText) {
+                    const currentWord = this.sessionWords[this.currentWordIndex];
+                    
+                    // Clean up spoken text (remove spaces, convert to lowercase)
+                    const cleanSpoken = spokenText.toLowerCase().replace(/\s+/g, '');
+                    
+                    // Get letters individually
+                    let letters = [];
+                    for (const char of cleanSpoken) {
+                        if (/[a-z]/.test(char)) {
+                            letters.push(char);
+                        }
+                    }
+                    
+                    const spokenLetters = letters.join('');
+                    const isCorrect = currentWord.toLowerCase() === spokenLetters;
+                    
+                    // Now show the word since we're providing feedback
+                    this.elements.wordDisplay.textContent = currentWord;
+                    
+                    // Display result
+                    this.elements.resultDisplay.textContent = isCorrect ? 'Correct! ✓' : `Incorrect. You spelled: "${spokenLetters}"`;
+                    this.elements.resultDisplay.className = isCorrect ? 'result correct' : 'result incorrect';
+                    
+                    // Update stats
+                    if (isCorrect) {
+                        this.correctCount++;
+                        this.elements.correctCount.textContent = this.correctCount;
+                    } else {
+                        this.incorrectCount++;
+                        this.elements.incorrectCount.textContent = this.incorrectCount;
+                    }
+                    
+                    // Save result
+                    this.sessionResults.push({
+                        word: currentWord,
+                        userSpelling: spokenLetters,
+                        isCorrect: isCorrect
+                    });
+                    
+                    // Update progress
+                    this.currentWordIndex++;
+                    this.elements.wordCount.textContent = this.currentWordIndex;
+                    const progressPercentage = (this.currentWordIndex / this.sessionWords.length) * 100;
+                    this.elements.progressFill.style.width = `${progressPercentage}%`;
+                    
+                    // Show next word after a delay
+                    setTimeout(() => this.showNextWord(), 2000);
+                }
+                
+                skipWord() {
+                    // Save as incorrect
+                    const currentWord = this.sessionWords[this.currentWordIndex];
+                    this.sessionResults.push({
+                        word: currentWord,
+                        userSpelling: '(skipped)',
+                        isCorrect: false
+                    });
+                    
+                    // Update stats
                     this.incorrectCount++;
                     this.elements.incorrectCount.textContent = this.incorrectCount;
+                    
+                    // Move to next word
+                    this.currentWordIndex++;
+                    this.elements.wordCount.textContent = this.currentWordIndex;
+                    const progressPercentage = (this.currentWordIndex / this.sessionWords.length) * 100;
+                    this.elements.progressFill.style.width = `${progressPercentage}%`;
+                    
+                    this.showNextWord();
                 }
                 
-                // Save result
-                this.sessionResults.push({
-                    word: currentWord,
-                    userSpelling: spokenLetters,
-                    isCorrect: isCorrect
-                });
+                endSession() {
+                    // Show summary
+                    this.elements.practiceSection.classList.add('hidden');
+                    this.elements.summarySection.classList.remove('hidden');
+                    
+                    // Update summary stats
+                    const total = this.sessionResults.length;
+                    const correct = this.sessionResults.filter(r => r.isCorrect).length;
+                    const incorrect = total - correct;
+                    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+                    
+                    this.elements.summaryTotal.textContent = total;
+                    this.elements.summaryCorrect.textContent = correct;
+                    this.elements.summaryIncorrect.textContent = incorrect;
+                    this.elements.summaryAccuracy.textContent = `${accuracy}%`;
+                    
+                    // Show words to review (incorrect ones)
+                    this.elements.reviewList.innerHTML = '';
+                    const incorrectWords = this.sessionResults.filter(r => !r.isCorrect);
+                    
+                    if (incorrectWords.length === 0) {
+                        this.elements.reviewList.innerHTML = '<tr><td colspan="2">Great job! No words to review.</td></tr>';
+                        this.elements.practiceMissedBtn.disabled = true;
+                    } else {
+                        incorrectWords.forEach(result => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${result.word}</td>
+                                <td>${result.userSpelling}</td>
+                            `;
+                            this.elements.reviewList.appendChild(row);
+                        });
+                        this.elements.practiceMissedBtn.disabled = false;
+                    }
+                    
+                    // Save results to localStorage
+                    this.saveResultsToStorage();
+                }
                 
-                // Update progress
-                this.currentWordIndex++;
-                this.elements.wordCount.textContent = this.currentWordIndex;
-                const progressPercentage = (this.currentWordIndex / this.sessionWords.length) * 100;
-                this.elements.progressFill.style.width = `${progressPercentage}%`;
-                
-                // Show next word after a delay
-                setTimeout(() => this.showNextWord(), 2000);
-            }
-            
-            skipWord() {
-                // Save as incorrect
-                const currentWord = this.sessionWords[this.currentWordIndex];
-                this.sessionResults.push({
-                    word: currentWord,
-                    userSpelling: '(skipped)',
-                    isCorrect: false
-                });
-                
-                // Update stats
-                this.incorrectCount++;
-                this.elements.incorrectCount.textContent = this.incorrectCount;
-                
-                // Move to next word
-                this.currentWordIndex++;
-                this.elements.wordCount.textContent = this.currentWordIndex;
-                const progressPercentage = (this.currentWordIndex / this.sessionWords.length) * 100;
-                this.elements.progressFill.style.width = `${progressPercentage}%`;
-                
-                this.showNextWord();
-            }
-            
-            endSession() {
-                // Show summary
-                this.elements.practiceSection.classList.add('hidden');
-                this.elements.summarySection.classList.remove('hidden');
-                
-                // Update summary stats
-                const total = this.sessionResults.length;
-                const correct = this.sessionResults.filter(r => r.isCorrect).length;
-                const incorrect = total - correct;
-                const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-                
-                this.elements.summaryTotal.textContent = total;
-                this.elements.summaryCorrect.textContent = correct;
-                this.elements.summaryIncorrect.textContent = incorrect;
-                this.elements.summaryAccuracy.textContent = `${accuracy}%`;
-                
-                // Show words to review (incorrect ones)
-                this.elements.reviewList.innerHTML = '';
-                const incorrectWords = this.sessionResults.filter(r => !r.isCorrect);
-                
-                if (incorrectWords.length === 0) {
-                    this.elements.reviewList.innerHTML = '<tr><td colspan="2">Great job! No words to review.</td></tr>';
-                    this.elements.practiceMissedBtn.disabled = true;
-                } else {
-                    incorrectWords.forEach(result => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${result.word}</td>
-                            <td>${result.userSpelling}</td>
-                        `;
-                        this.elements.reviewList.appendChild(row);
+                saveResultsToStorage() {
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+                    
+                    // Get existing history or initialize new one
+                    let history = JSON.parse(localStorage.getItem('spellingHistory') || '[]');
+                    
+                    // Add this session
+                    history.push({
+                        date: dateStr,
+                        words: this.sessionWords.length,
+                        correct: this.correctCount,
+                        incorrect: this.incorrectCount,
+                        results: this.sessionResults
                     });
-                    this.elements.practiceMissedBtn.disabled = false;
+                    
+                    // Save back to localStorage
+                    localStorage.setItem('spellingHistory', JSON.stringify(history));
                 }
                 
-                // Save results to localStorage
-                this.saveResultsToStorage();
+                downloadResults() {
+                    // Create CSV content
+                    let csvContent = 'Word,Your Spelling,Result\n';
+                    
+                    this.sessionResults.forEach(result => {
+                        csvContent += `"${result.word}","${result.userSpelling}","${result.isCorrect ? 'Correct' : 'Incorrect'}"\n`;
+                    });
+                    
+                    // Create download link
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `spelling_results_${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                
+                resetToSetup() {
+                    this.elements.summarySection.classList.add('hidden');
+                    this.elements.setupSection.classList.remove('hidden');
+                }
+                
+                practiceMissedWords() {
+                    // Get incorrect words from previous session
+                    const incorrectWords = this.sessionResults
+                        .filter(r => !r.isCorrect)
+                        .map(r => r.word);
+                    
+                    if (incorrectWords.length === 0) return;
+                    
+                    // Setup new session with just the missed words
+                    this.sessionWords = incorrectWords;
+                    this.currentWordIndex = 0;
+                    this.sessionResults = [];
+                    this.correctCount = 0;
+                    this.incorrectCount = 0;
+                    
+                    // Setup UI
+                    this.elements.wordCount.textContent = 0;
+                    this.elements.totalWords.textContent = this.sessionWords.length;
+                    this.elements.correctCount.textContent = 0;
+                    this.elements.incorrectCount.textContent = 0;
+                    this.elements.progressFill.style.width = '0%';
+                    this.elements.resultsList.innerHTML = '';
+                    
+                    // Show practice section, hide summary
+                    this.elements.summarySection.classList.add('hidden');
+                    this.elements.practiceSection.classList.remove('hidden');
+                    this.elements.resultsTable.classList.add('hidden');
+                    
+                    // Start with first word
+                    this.showNextWord();
+                }
             }
             
-            saveResultsToStorage() {
-                const now = new Date();
-                const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-                
-                // Get existing history or initialize new one
-                let history = JSON.parse(localStorage.getItem('spellingHistory') || '[]');
-                
-                // Add this session
-                history.push({
-                    date: dateStr,
-                    words: this.sessionWords.length,
-                    correct: this.correctCount,
-                    incorrect: this.incorrectCount,
-                    results: this.sessionResults
-                });
-                
-                // Save back to localStorage
-                localStorage.setItem('spellingHistory', JSON.stringify(history));
-            }
-            
-            downloadResults() {
-                // Create CSV content
-                let csvContent = 'Word,Your Spelling,Result\n';
-                
-                this.sessionResults.forEach(result => {
-                    csvContent += `"${result.word}","${result.userSpelling}","${result.isCorrect ? 'Correct' : 'Incorrect'}"\n`;
-                });
-                
-                // Create download link
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.setAttribute('href', url);
-                link.setAttribute('download', `spelling_results_${new Date().toISOString().split('T')[0]}.csv`);
-                link.style.visibility = 'hidden';
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-            
-            resetToSetup() {
-                this.elements.summarySection.classList.add('hidden');
-                this.elements.setupSection.classList.remove('hidden');
-            }
-            
-            practiceMissedWords() {
-                // Get incorrect words from previous session
-                const incorrectWords = this.sessionResults
-                    .filter(r => !r.isCorrect)
-                    .map(r => r.word);
-                
-                if (incorrectWords.length === 0) return;
-                
-                // Setup new session with just the missed words
-                this.sessionWords = incorrectWords;
-                this.currentWordIndex = 0;
-                this.sessionResults = [];
-                this.correctCount = 0;
-                this.incorrectCount = 0;
-                
-                // Setup UI
-                this.elements.wordCount.textContent = 0;
-                this.elements.totalWords.textContent = this.sessionWords.length;
-                this.elements.correctCount.textContent = 0;
-                this.elements.incorrectCount.textContent = 0;
-                this.elements.progressFill.style.width = '0%';
-                this.elements.resultsList.innerHTML = '';
-                
-                // Show practice section, hide summary
-                this.elements.summarySection.classList.add('hidden');
-                this.elements.practiceSection.classList.remove('hidden');
-                this.elements.resultsTable.classList.add('hidden');
-                
-                // Start with first word
-                this.showNextWord();
-            }
-        }
-        
-        // Initialize the app when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize the app
             const app = new SpellingBeeApp();
         });
     </script>
