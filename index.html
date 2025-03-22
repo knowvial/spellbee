@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Bee Practice App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4a4a4a;
+        }
+        h1 {
+            color: #3498db;
+        }
+        .btn {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #2ecc71;
+        }
+        .btn-secondary:hover {
+            background-color: #27ae60;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .word-display {
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+            min-height: 36px;
+        }
+        .status-display {
+            font-size: 18px;
+            text-align: center;
+            margin: 10px 0;
+            min-height: 27px;
+            color: #7f8c8d;
+        }
+        .result {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 36px;
+        }
+        .correct {
+            color: #2ecc71;
+        }
+        .incorrect {
+            color: #e74c3c;
+        }
+        .progress-container {
+            margin: 20px 0;
+        }
+        .progress-bar {
+            background-color: #ecf0f1;
+            border-radius: 15px;
+            height: 20px;
+            position: relative;
+        }
+        .progress-fill {
+            background-color: #3498db;
+            border-radius: 15px;
+            height: 100%;
+            width: 0;
+            transition: width 0.5s;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .upload-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .setup-container {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 20px;
+        }
+        .word-input {
+            width: 100%;
+            min-height: 100px;
+            margin-bottom: 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+        .listening {
+            color: #3498db;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 10px 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .option-group {
+            margin-bottom: 15px;
+            flex-basis: 48%;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+        }
+        .results-container {
+            margin-top: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ecf0f1;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .hidden {
+            display: none;
+        }
+        .voice-wave {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 40px;
+            margin: 10px 0;
+        }
+        .wave-bar {
+            background-color: #3498db;
+            width: 4px;
+            height: 10px;
+            margin: 0 2px;
+            border-radius: 2px;
+            animation: none;
+        }
+        .active-wave .wave-bar {
+            animation: wave 1s infinite ease-in-out;
+        }
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 30px; }
+        }
+        .wave-bar:nth-child(1) { animation-delay: 0s; }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+        .wave-bar:nth-child(7) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Spelling Bee Practice App</h1>
+            <p>Practice spelling words and track your progress</p>
+        </div>
+
+        <div class="setup-container" id="setupSection">
+            <h2>Setup</h2>
+            <div class="instructions">
+                <p>Enter your spelling words (one per line) or upload a text file containing your word list.</p>
+            </div>
+            
+            <div class="upload-container">
+                <textarea class="word-input" id="wordInput" placeholder="Enter your spelling words here, one per line..."></textarea>
+                <p>OR</p>
+                <input type="file" id="fileInput" accept=".txt,.csv">
+                <p class="status-display" id="fileStatus"></p>
+            </div>
+
+            <div class="options">
+                <div class="option-group">
+                    <label for="difficultySelect">Difficulty:</label>
+                    <select id="difficultySelect">
+                        <option value="random">Random</option>
+                        <option value="easy">Easy (short words first)</option>
+                        <option value="hard">Hard (long words first)</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label for="sessionSize">Session Size:</label>
+                    <input type="number" id="sessionSize" min="5" max="100" value="20">
+                </div>
+                <div class="option-group">
+                    <label for="repeatErrors">Repeat incorrect words:</label>
+                    <select id="repeatErrors">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label for="promptType">Prompt Type:</label>
+                    <select id="promptType">
+                        <option value="word">Word only</option>
+                        <option value="definition">Word with definition (if available)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="startBtn">Start Practice</button>
+            </div>
+        </div>
+
+        <div id="practiceSection" class="hidden">
+            <div class="word-display" id="wordDisplay"></div>
+            <div class="status-display" id="statusDisplay"></div>
+            
+            <div class="voice-wave" id="voiceWave">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+            
+            <div class="result" id="resultDisplay"></div>
+            
+            <div class="progress-container">
+                <div class="stats">
+                    <div class="stat-item">Words: <span id="wordCount">0</span>/<span id="totalWords">0</span></div>
+                    <div class="stat-item">Correct: <span id="correctCount">0</span></div>
+                    <div class="stat-item">Incorrect: <span id="incorrectCount">0</span></div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn" id="hearWordBtn">Hear Word</button>
+                <button class="btn btn-secondary" id="recordBtn">Record Answer</button>
+                <button class="btn" id="skipBtn">Skip</button>
+                <button class="btn btn-danger" id="stopBtn">End Session</button>
+            </div>
+
+            <div class="results-container hidden" id="resultsTable">
+                <h3>Session Results</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Your Spelling</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsList">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="summarySection" class="hidden">
+            <h2>Session Summary</h2>
+            <div class="stats">
+                <div class="stat-item">Total Words: <span id="summaryTotal">0</span></div>
+                <div class="stat-item">Correct: <span id="summaryCorrect">0</span></div>
+                <div class="stat-item">Incorrect: <span id="summaryIncorrect">0</span></div>
+                <div class="stat-item">Accuracy: <span id="summaryAccuracy">0%</span></div>
+            </div>
+            
+            <div class="results-container" id="summaryTable">
+                <h3>Words to Review</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Your Spelling</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reviewList">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="controls">
+                <button class="btn" id="downloadBtn">Download Results</button>
+                <button class="btn btn-secondary" id="newSessionBtn">New Session</button>
+                <button class="btn" id="practiceMissedBtn">Practice Missed Words</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SpellingBeeApp {
+            constructor() {
+                this.words = [];
+                this.currentWordIndex = 0;
+                this.sessionWords = [];
+                this.sessionResults = [];
+                this.correctCount = 0;
+                this.incorrectCount = 0;
+                
+                // Speech recognition
+                this.recognition = null;
+                this.isListening = false;
+                
+                // Speech synthesis
+                this.synth = window.speechSynthesis;
+                
+                // DOM elements
+                this.elements = {
+                    setupSection: document.getElementById('setupSection'),
+                    practiceSection: document.getElementById('practiceSection'),
+                    summarySection: document.getElementById('summarySection'),
+                    wordInput: document.getElementById('wordInput'),
+                    fileInput: document.getElementById('fileInput'),
+                    fileStatus: document.getElementById('fileStatus'),
+                    startBtn: document.getElementById('startBtn'),
+                    wordDisplay: document.getElementById('wordDisplay'),
+                    statusDisplay: document.getElementById('statusDisplay'),
+                    resultDisplay: document.getElementById('resultDisplay'),
+                    wordCount: document.getElementById('wordCount'),
+                    totalWords: document.getElementById('totalWords'),
+                    correctCount: document.getElementById('correctCount'),
+                    incorrectCount: document.getElementById('incorrectCount'),
+                    progressFill: document.getElementById('progressFill'),
+                    hearWordBtn: document.getElementById('hearWordBtn'),
+                    recordBtn: document.getElementById('recordBtn'),
+                    skipBtn: document.getElementById('skipBtn'),
+                    stopBtn: document.getElementById('stopBtn'),
+                    resultsTable: document.getElementById('resultsTable'),
+                    resultsList: document.getElementById('resultsList'),
+                    summaryTotal: document.getElementById('summaryTotal'),
+                    summaryCorrect: document.getElementById('summaryCorrect'),
+                    summaryIncorrect: document.getElementById('summaryIncorrect'),
+                    summaryAccuracy: document.getElementById('summaryAccuracy'),
+                    reviewList: document.getElementById('reviewList'),
+                    downloadBtn: document.getElementById('downloadBtn'),
+                    newSessionBtn: document.getElementById('newSessionBtn'),
+                    practiceMissedBtn: document.getElementById('practiceMissedBtn'),
+                    difficultySelect: document.getElementById('difficultySelect'),
+                    sessionSize: document.getElementById('sessionSize'),
+                    repeatErrors: document.getElementById('repeatErrors'),
+                    promptType: document.getElementById('promptType'),
+                    voiceWave: document.getElementById('voiceWave')
+                };
+                
+                // Initialize
+                this.initSpeechRecognition();
+                this.bindEvents();
+            }
+            
+            initSpeechRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = 'en-US';
+                    
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        this.checkSpelling(transcript);
+                    };
+                    
+                    this.recognition.onend = () => {
+                        this.isListening = false;
+                        this.elements.statusDisplay.textContent = '';
+                        this.elements.statusDisplay.classList.remove('listening');
+                        this.elements.voiceWave.classList.remove('active-wave');
+                        this.elements.recordBtn.textContent = 'Record Answer';
+                    };
+                    
+                    this.recognition.onerror = (event) => {
+                        console.error('Speech recognition error', event.error);
+                        this.elements.statusDisplay.textContent = `Error: ${event.error}. Please try again.`;
+                        this.isListening = false;
+                        this.elements.voiceWave.classList.remove('active-wave');
+                        this.elements.recordBtn.textContent = 'Record Answer';
+                    };
+                } else {
+                    alert('Speech recognition is not supported in your browser. Please try Chrome or Edge.');
+                    this.elements.recordBtn.disabled = true;
+                }
+            }
+            
+            bindEvents() {
+                // Setup events
+                this.elements.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+                this.elements.startBtn.addEventListener('click', () => this.startSession());
+                
+                // Practice events
+                this.elements.hearWordBtn.addEventListener('click', () => this.speakCurrentWord());
+                this.elements.recordBtn.addEventListener('click', () => this.toggleListening());
+                this.elements.skipBtn.addEventListener('click', () => this.skipWord());
+                this.elements.stopBtn.addEventListener('click', () => this.endSession());
+                
+                // Summary events
+                this.elements.downloadBtn.addEventListener('click', () => this.downloadResults());
+                this.elements.newSessionBtn.addEventListener('click', () => this.resetToSetup());
+                this.elements.practiceMissedBtn.addEventListener('click', () => this.practiceMissedWords());
+            }
+            
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                this.elements.fileStatus.textContent = 'Reading file...';
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    this.elements.wordInput.value = content;
+                    this.elements.fileStatus.textContent = 'File loaded successfully.';
+                };
+                reader.onerror = () => {
+                    this.elements.fileStatus.textContent = 'Error reading file.';
+                };
+                reader.readAsText(file);
+            }
+            
+            parseWordList() {
+                const text = this.elements.wordInput.value;
+                if (!text.trim()) {
+                    alert('Please enter some words or upload a file.');
+                    return false;
+                }
+                
+                // Parse words (remove empty lines and trim)
+                this.words = text.split('\n')
+                    .map(word => word.trim())
+                    .filter(word => word.length > 0);
+                
+                if (this.words.length === 0) {
+                    alert('No valid words found. Please check your input.');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            startSession() {
+                if (!this.parseWordList()) return;
+                
+                // Get options
+                const difficulty = this.elements.difficultySelect.value;
+                const sessionSize = parseInt(this.elements.sessionSize.value) || 20;
+                
+                // Sort words according to difficulty
+                let wordList = [...this.words];
+                if (difficulty === 'easy') {
+                    wordList.sort((a, b) => a.length - b.length);
+                } else if (difficulty === 'hard') {
+                    wordList.sort((a, b) => b.length - a.length);
+                } else {
+                    // Random order
+                    wordList.sort(() => Math.random() - 0.5);
+                }
+                
+                // Choose session words
+                this.sessionWords = wordList.slice(0, Math.min(sessionSize, wordList.length));
+                this.currentWordIndex = 0;
+                this.sessionResults = [];
+                this.correctCount = 0;
+                this.incorrectCount = 0;
+                
+                // Setup UI
+                this.elements.wordCount.textContent = 0;
+                this.elements.totalWords.textContent = this.sessionWords.length;
+                this.elements.correctCount.textContent = 0;
+                this.elements.incorrectCount.textContent = 0;
+                this.elements.progressFill.style.width = '0%';
+                this.elements.resultsList.innerHTML = '';
+                
+                // Show practice section, hide setup
+                this.elements.setupSection.classList.add('hidden');
+                this.elements.practiceSection.classList.remove('hidden');
+                this.elements.summarySection.classList.add('hidden');
+                this.elements.resultsTable.classList.add('hidden');
+                
+                // Start with first word
+                this.showNextWord();
+            }
+            
+            showNextWord() {
+                if (this.currentWordIndex >= this.sessionWords.length) {
+                    this.endSession();
+                    return;
+                }
+                
+                const currentWord = this.sessionWords[this.currentWordIndex];
+                this.elements.wordDisplay.textContent = currentWord;
+                this.elements.statusDisplay.textContent = 'Press "Hear Word" or "Record Answer"';
+                this.elements.resultDisplay.textContent = '';
+                this.elements.resultDisplay.className = 'result';
+                
+                // Auto speak the word if option is selected
+                setTimeout(() => this.speakCurrentWord(), 500);
+            }
+            
+            speakCurrentWord() {
+                if (this.synth.speaking) {
+                    this.synth.cancel();
+                }
+                
+                const currentWord = this.sessionWords[this.currentWordIndex];
+                const utterance = new SpeechSynthesisUtterance(currentWord);
+                utterance.rate = 0.9;
+                this.synth.speak(utterance);
+            }
+            
+            toggleListening() {
+                if (this.isListening) {
+                    this.recognition.stop();
+                } else {
+                    this.startListening();
+                }
+            }
+            
+            startListening() {
+                if (!this.recognition) return;
+                
+                try {
+                    this.recognition.start();
+                    this.isListening = true;
+                    this.elements.statusDisplay.textContent = 'Listening... Spell the word...';
+                    this.elements.statusDisplay.classList.add('listening');
+                    this.elements.recordBtn.textContent = 'Stop Recording';
+                    this.elements.voiceWave.classList.add('active-wave');
+                } catch (error) {
+                    console.error('Speech recognition error', error);
+                    this.elements.statusDisplay.textContent = 'Error starting recognition. Please try again.';
+                }
+            }
+            
+            checkSpelling(spokenText) {
+                const currentWord = this.sessionWords[this.currentWordIndex];
+                
+                // Clean up spoken text (remove spaces, convert to lowercase)
+                const cleanSpoken = spokenText.toLowerCase().replace(/\s+/g, '');
+                
+                // Get letters individually
+                let letters = [];
+                for (const char of cleanSpoken) {
+                    if (/[a-z]/.test(char)) {
+                        letters.push(char);
+                    }
+                }
+                
+                const spokenLetters = letters.join('');
+                const isCorrect = currentWord.toLowerCase() === spokenLetters;
+                
+                // Display result
+                this.elements.resultDisplay.textContent = isCorrect ? 'Correct! ✓' : `Incorrect. You spelled: "${spokenLetters}"`;
+                this.elements.resultDisplay.className = isCorrect ? 'result correct' : 'result incorrect';
+                
+                // Update stats
+                if (isCorrect) {
+                    this.correctCount++;
+                    this.elements.correctCount.textContent = this.correctCount;
+                } else {
+                    this.incorrectCount++;
+                    this.elements.incorrectCount.textContent = this.incorrectCount;
+                }
+                
+                // Save result
+                this.sessionResults.push({
+                    word: currentWord,
+                    userSpelling: spokenLetters,
+                    isCorrect: isCorrect
+                });
+                
+                // Update progress
+                this.currentWordIndex++;
+                this.elements.wordCount.textContent = this.currentWordIndex;
+                const progressPercentage = (this.currentWordIndex / this.sessionWords.length) * 100;
+                this.elements.progressFill.style.width = `${progressPercentage}%`;
+                
+                // Show next word after a delay
+                setTimeout(() => this.showNextWord(), 2000);
+            }
+            
+            skipWord() {
+                // Save as incorrect
+                const currentWord = this.sessionWords[this.currentWordIndex];
+                this.sessionResults.push({
+                    word: currentWord,
+                    userSpelling: '(skipped)',
+                    isCorrect: false
+                });
+                
+                // Update stats
+                this.incorrectCount++;
+                this.elements.incorrectCount.textContent = this.incorrectCount;
+                
+                // Move to next word
+                this.currentWordIndex++;
+                this.elements.wordCount.textContent = this.currentWordIndex;
+                const progressPercentage = (this.currentWordIndex / this.sessionWords.length) * 100;
+                this.elements.progressFill.style.width = `${progressPercentage}%`;
+                
+                this.showNextWord();
+            }
+            
+            endSession() {
+                // Show summary
+                this.elements.practiceSection.classList.add('hidden');
+                this.elements.summarySection.classList.remove('hidden');
+                
+                // Update summary stats
+                const total = this.sessionResults.length;
+                const correct = this.sessionResults.filter(r => r.isCorrect).length;
+                const incorrect = total - correct;
+                const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+                
+                this.elements.summaryTotal.textContent = total;
+                this.elements.summaryCorrect.textContent = correct;
+                this.elements.summaryIncorrect.textContent = incorrect;
+                this.elements.summaryAccuracy.textContent = `${accuracy}%`;
+                
+                // Show words to review (incorrect ones)
+                this.elements.reviewList.innerHTML = '';
+                const incorrectWords = this.sessionResults.filter(r => !r.isCorrect);
+                
+                if (incorrectWords.length === 0) {
+                    this.elements.reviewList.innerHTML = '<tr><td colspan="2">Great job! No words to review.</td></tr>';
+                    this.elements.practiceMissedBtn.disabled = true;
+                } else {
+                    incorrectWords.forEach(result => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${result.word}</td>
+                            <td>${result.userSpelling}</td>
+                        `;
+                        this.elements.reviewList.appendChild(row);
+                    });
+                    this.elements.practiceMissedBtn.disabled = false;
+                }
+                
+                // Save results to localStorage
+                this.saveResultsToStorage();
+            }
+            
+            saveResultsToStorage() {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+                
+                // Get existing history or initialize new one
+                let history = JSON.parse(localStorage.getItem('spellingHistory') || '[]');
+                
+                // Add this session
+                history.push({
+                    date: dateStr,
+                    words: this.sessionWords.length,
+                    correct: this.correctCount,
+                    incorrect: this.incorrectCount,
+                    results: this.sessionResults
+                });
+                
+                // Save back to localStorage
+                localStorage.setItem('spellingHistory', JSON.stringify(history));
+            }
+            
+            downloadResults() {
+                // Create CSV content
+                let csvContent = 'Word,Your Spelling,Result\n';
+                
+                this.sessionResults.forEach(result => {
+                    csvContent += `"${result.word}","${result.userSpelling}","${result.isCorrect ? 'Correct' : 'Incorrect'}"\n`;
+                });
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `spelling_results_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            resetToSetup() {
+                this.elements.summarySection.classList.add('hidden');
+                this.elements.setupSection.classList.remove('hidden');
+            }
+            
+            practiceMissedWords() {
+                // Get incorrect words from previous session
+                const incorrectWords = this.sessionResults
+                    .filter(r => !r.isCorrect)
+                    .map(r => r.word);
+                
+                if (incorrectWords.length === 0) return;
+                
+                // Setup new session with just the missed words
+                this.sessionWords = incorrectWords;
+                this.currentWordIndex = 0;
+                this.sessionResults = [];
+                this.correctCount = 0;
+                this.incorrectCount = 0;
+                
+                // Setup UI
+                this.elements.wordCount.textContent = 0;
+                this.elements.totalWords.textContent = this.sessionWords.length;
+                this.elements.correctCount.textContent = 0;
+                this.elements.incorrectCount.textContent = 0;
+                this.elements.progressFill.style.width = '0%';
+                this.elements.resultsList.innerHTML = '';
+                
+                // Show practice section, hide summary
+                this.elements.summarySection.classList.add('hidden');
+                this.elements.practiceSection.classList.remove('hidden');
+                this.elements.resultsTable.classList.add('hidden');
+                
+                // Start with first word
+                this.showNextWord();
+            }
+        }
+        
+        // Initialize the app when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new SpellingBeeApp();
+        });
+    </script>
+</body>
+</html>
