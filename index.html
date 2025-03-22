@@ -556,7 +556,8 @@
                 }
                 
                 const currentWord = this.sessionWords[this.currentWordIndex];
-                this.elements.wordDisplay.textContent = currentWord;
+                // Hide the word during testing
+                this.elements.wordDisplay.textContent = "Word #" + (this.currentWordIndex + 1);
                 this.elements.statusDisplay.textContent = 'Press "Hear Word" or "Record Answer"';
                 this.elements.resultDisplay.textContent = '';
                 this.elements.resultDisplay.className = 'result';
@@ -616,6 +617,9 @@
                 
                 const spokenLetters = letters.join('');
                 const isCorrect = currentWord.toLowerCase() === spokenLetters;
+                
+                // Now show the word since we're providing feedback
+                this.elements.wordDisplay.textContent = currentWord;
                 
                 // Display result
                 this.elements.resultDisplay.textContent = isCorrect ? 'Correct! ✓' : `Incorrect. You spelled: "${spokenLetters}"`;
