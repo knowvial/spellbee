@@ -64,7 +64,6 @@ attuned
 auditorium
 avid
 awash
-B
 badgers
 bagel
 baggage
@@ -138,7 +137,6 @@ burly
 bushy
 butterflies
 butterscotch
-C
 calabash
 caloric
 calorimetric
@@ -229,7 +227,6 @@ curtail
 custard
 custody
 cyclone
-D
 daily
 dangle
 deadlock
@@ -286,8 +283,6 @@ dual
 durable
 dwarf
 dwelling
-e
-E
 early
 earthquake
 earwig
@@ -319,7 +314,6 @@ expire
 exterminate
 extrinsic
 eyelid
-F
 facial
 failure
 famine
@@ -363,7 +357,6 @@ fringe
 frugal
 funeral
 fury
-G
 gaggle
 gale
 gallant
@@ -406,7 +399,6 @@ grumbling
 guaranteed
 guardian
 gunboat
-H
 habit
 hailstones
 hairiest
@@ -450,8 +442,6 @@ hurdle
 hustle
 hydrant
 hydroxide
-I
-i
 iceberg
 icebound
 icing
@@ -501,7 +491,6 @@ irrevocably
 irritable
 Islamic
 itinerary
-J
 jackal
 janitor
 January
@@ -509,7 +498,6 @@ jerky
 joyous
 junco
 junket
-K
 karaoke
 karate
 keen
@@ -523,8 +511,6 @@ kith
 kitten
 knowledge
 kuru
-L
-l
 lamppost
 landscape
 lank
@@ -562,7 +548,6 @@ lunatic
 lute
 lux
 lynx
-M
 magazine
 magistracy
 magnetic
@@ -613,7 +598,6 @@ mustang
 muster
 mutable
 myth
-N
 nacho
 narrative
 naturalism
@@ -631,7 +615,6 @@ nonexistent
 noodle
 nostril
 novelist
-O
 oath
 obligation
 obscure
@@ -656,7 +639,6 @@ overdue
 overvoltage
 oxford
 ozone
-P
 pace
 pagoda
 pajamas
@@ -731,7 +713,6 @@ pulsate
 punt
 purplish
 puzzle
-R
 ramada
 ramage
 rambunctiously
@@ -782,7 +763,6 @@ ruination
 russet
 rustling
 rutted
-S
 sabbath
 sacrifice
 salamander
@@ -917,7 +897,6 @@ swineherd
 symbiosis
 symptoms
 synthetic
-T
 tact
 tangle
 tangy
@@ -982,7 +961,6 @@ universe
 unreadable
 upright
 uproar
-V
 valuable
 vampire
 vandalize
@@ -1001,7 +979,6 @@ violin
 virus
 vocalize
 volcano
-W
 wasteful
 waterspout
 weapon
@@ -1014,11 +991,9 @@ worship
 wreath
 wrench
 wrinkle
-Y
 yang
 yin
 youth
-Z
 zinnia
 ziti
 zodiac
