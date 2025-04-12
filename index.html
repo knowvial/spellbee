@@ -427,6 +427,7 @@
                     
                     // Speech synthesis
                     this.synth = window.speechSynthesis;
+                    this.selectedVoice = null; // Store selected voice for consistent usage
                     
                     // DOM elements - ensure these match the IDs in the HTML
                     this.elements = {
@@ -491,6 +492,19 @@
                         this.recognition.continuous = false;
                         this.recognition.interimResults = false;
                         this.recognition.lang = 'en-US';
+                        
+                        // Load voices when they're available (may be async in some browsers)
+                        if (window.speechSynthesis) {
+                            // For some browsers, voices need to be loaded explicitly
+                            if (speechSynthesis.onvoiceschanged !== undefined) {
+                                speechSynthesis.onvoiceschanged = () => {
+                                    console.log('Voices loaded:', speechSynthesis.getVoices().length);
+                                };
+                            }
+                            
+                            // Pre-load voices
+                            speechSynthesis.getVoices();
+                        }
                         
                         this.recognition.onresult = (event) => {
                             const transcript = event.results[0][0].transcript;
@@ -662,19 +676,131 @@
                     
                     // If using definitions and we have one for this word, include it
                     let textToSpeak = currentWord;
+                    let definitionToSpeak = "";
                     
                     if (this.useDefinitions) {
                         const wordObj = this.wordsWithDefinitions.find(item => item.word.toLowerCase() === currentWord.toLowerCase());
                         if (wordObj && wordObj.definition) {
-                            textToSpeak = `${currentWord}. Definition: ${wordObj.definition}`;
-                            
+                            definitionToSpeak = wordObj.definition;
                             // Also update the display to show the definition
                             this.elements.statusDisplay.textContent = `Definition: ${wordObj.definition}`;
                         }
                     }
                     
-                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.rate = 0.9;
+                    // First, speak the word with pauses between letters for clarity
+                    let spellOutWord = currentWord.split('').join(' . ');
+                    
+                    // Create utterance for the word
+                    const wordUtterance = new SpeechSynthesisUtterance(currentWord);
+                    
+                    // Get available voices and select a clearer one if available
+                    const voices = this.synth.getVoices();
+                    
+                    // Try to find a good English voice - preferences in this order:
+                    // 1. Google US English
+                    // 2. Microsoft voices (for Edge)
+                    // 3. Any English US voice
+                    // 4. Default voice
+                    let selectedVoice = voices.find(voice => voice.name.includes('Google US English'));
+                    
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => voice.name.includes('Microsoft') && voice.lang.includes('en-US'));
+                    }
+                    
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => voice.lang.includes('en-US'));
+                    }
+                    
+                    if (selectedVoice) {
+                        wordUtterance.voice = selectedVoice;
+                    }
+                    
+                    // Adjust parameters for clearer speech
+                    wordUtterance.rate = 0.8;       // Slightly slower
+                    wordUtterance.pitch = 1.0;      // Normal pitch
+                    wordUtterance.volume = 1.0;     // Full volume
+                    
+                    // Create utterance for spelling out the word
+                    const spellUtterance = new SpeechSynthesisUtterance("I'll spell that for you. " + spellOutWord);
+                    if (selectedVoice) {
+                        spellUtterance.voice = selectedVoice;
+                    }
+                    spellUtterance.rate = 0.7;
+                    
+                    // Create utterance for the definition (if available)
+                    let definitionUtterance = null;
+                    if (definitionToSpeak) {
+                        definitionUtterance = new SpeechSynthesisUtterance("Definition: " + definitionToSpeak);
+                        if (selectedVoice) {
+                            definitionUtterance.voice = selectedVoice;
+                        }
+                        definitionUtterance.rate = 0.9;
+                    }
+                    
+                    // Chain the utterances with events
+                    wordUtterance.onend = () => {
+                        this.synth.speak(spellUtterance);
+                    };
+                    
+                    if (definitionToSpeak) {
+                        spellUtterance.onend = () => {
+                            this.synth.speak(definitionUtterance);
+                        };
+                    }
+                    
+                    // Start the sequence
+                    this.synth.speak(wordUtterance);
+                    
+                    // Add a button to repeat word more slowly if needed
+                    if (!this.elements.repeatSlowlyBtn) {
+                        const repeatBtn = document.createElement('button');
+                        repeatBtn.className = 'btn';
+                        repeatBtn.textContent = 'Repeat Slowly';
+                        repeatBtn.id = 'repeatSlowlyBtn';
+                        repeatBtn.addEventListener('click', () => this.speakWordSlowly());
+                        
+                        // Insert after hear word button
+                        this.elements.hearWordBtn.parentNode.insertBefore(
+                            repeatBtn, 
+                            this.elements.hearWordBtn.nextSibling
+                        );
+                        
+                        this.elements.repeatSlowlyBtn = repeatBtn;
+                    }
+                }
+                
+                speakWordSlowly() {
+                    if (this.synth.speaking) {
+                        this.synth.cancel();
+                    }
+                    
+                    const currentWord = this.sessionWords[this.currentWordIndex];
+                    
+                    // Speak each letter very slowly and clearly
+                    const letters = currentWord.split('');
+                    let letterSpelling = "";
+                    
+                    letters.forEach((letter, index) => {
+                        letterSpelling += `The letter ${letter}. `;
+                    });
+                    
+                    letterSpelling += `The word is: ${currentWord}`;
+                    
+                    const utterance = new SpeechSynthesisUtterance(letterSpelling);
+                    
+                    // Get available voices
+                    const voices = this.synth.getVoices();
+                    const selectedVoice = voices.find(voice => voice.name.includes('Google US English')) || 
+                                         voices.find(voice => voice.lang.includes('en-US'));
+                    
+                    if (selectedVoice) {
+                        utterance.voice = selectedVoice;
+                    }
+                    
+                    utterance.rate = 0.6;  // Very slow
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                    
                     this.synth.speak(utterance);
                 }
                 
