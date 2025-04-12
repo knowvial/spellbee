@@ -162,7 +162,7 @@
             display: block;
             margin-bottom: 5px;
         }
-        select, input[type="number"] {
+        select, input[type="number"], input[type="text"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #bdc3c7;
@@ -220,6 +220,19 @@
         .wave-bar:nth-child(5) { animation-delay: 0.4s; }
         .wave-bar:nth-child(6) { animation-delay: 0.5s; }
         .wave-bar:nth-child(7) { animation-delay: 0.6s; }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s ease infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -233,6 +246,7 @@
             <h2>Setup</h2>
             <div class="instructions">
                 <p>Enter your spelling words (one per line) or upload a text file containing your word list.</p>
+                <p>When hosted on GitHub Pages, the app will automatically try to load words from a file named "words.txt" in your repository.</p>
             </div>
             
             <div class="upload-container">
@@ -360,14 +374,52 @@
     <script>
         // Wait for DOM to be fully loaded before initializing
         document.addEventListener('DOMContentLoaded', function() {
+            // Function to auto-load a word list from the GitHub repository
+            async function loadWordListFromRepo() {
+                try {
+                    // Try to load words.txt from various possible locations
+                    const possiblePaths = [
+                        './words.txt',        // Current directory
+                        './data/words.txt',   // Data subdirectory
+                        './assets/words.txt', // Assets subdirectory
+                        './lists/words.txt'   // Lists subdirectory
+                    ];
+                    
+                    // Try each path until one works
+                    for (const path of possiblePaths) {
+                        try {
+                            const response = await fetch(path);
+                            if (response.ok) {
+                                const content = await response.text();
+                                document.getElementById('wordInput').value = content;
+                                document.getElementById('fileStatus').textContent = `Loaded spelling words from ${path}`;
+                                console.log(`Word list loaded successfully from ${path}`);
+                                return; // Exit once we've found a valid file
+                            }
+                        } catch (e) {
+                            // Continue to the next path
+                        }
+                    }
+                    
+                    console.log('No word list file found in the repository');
+                } catch (error) {
+                    console.error('Error loading word list:', error);
+                }
+            }
+            
+            // Try to load the word list
+            loadWordListFromRepo();
+            
             class SpellingBeeApp {
                 constructor() {
                     this.words = [];
+                    this.wordsWithDefinitions = [];
                     this.currentWordIndex = 0;
                     this.sessionWords = [];
                     this.sessionResults = [];
                     this.correctCount = 0;
                     this.incorrectCount = 0;
+                    this.useDefinitions = false;
                     
                     // Speech recognition
                     this.recognition = null;
@@ -510,8 +562,23 @@
                     
                     // Parse words (remove empty lines and trim)
                     this.words = text.split('\n')
-                        .map(word => word.trim())
+                        .map(line => {
+                            // Check if line contains a definition (separated by dash or hyphen)
+                            const parts = line.split(/\s+-\s+|\s+–\s+/);
+                            return parts[0].trim();
+                        })
                         .filter(word => word.length > 0);
+                    
+                    // Also parse definitions if they exist
+                    this.wordsWithDefinitions = text.split('\n')
+                        .map(line => {
+                            const parts = line.split(/\s+-\s+|\s+–\s+/);
+                            return {
+                                word: parts[0].trim(),
+                                definition: parts.length > 1 ? parts[1].trim() : ''
+                            };
+                        })
+                        .filter(item => item.word.length > 0);
                     
                     if (this.words.length === 0) {
                         alert('No valid words found. Please check your input.');
@@ -527,6 +594,12 @@
                     // Get options
                     const difficulty = this.elements.difficultySelect.value;
                     const sessionSize = parseInt(this.elements.sessionSize.value) || 20;
+                    const promptType = this.elements.promptType.value;
+                    
+                    // Check if we should use definitions
+                    this.useDefinitions = (promptType === 'definition') && 
+                                          this.wordsWithDefinitions.length > 0 &&
+                                          this.wordsWithDefinitions.some(item => item.definition);
                     
                     // Sort words according to difficulty
                     let wordList = [...this.words];
@@ -586,7 +659,21 @@
                     }
                     
                     const currentWord = this.sessionWords[this.currentWordIndex];
-                    const utterance = new SpeechSynthesisUtterance(currentWord);
+                    
+                    // If using definitions and we have one for this word, include it
+                    let textToSpeak = currentWord;
+                    
+                    if (this.useDefinitions) {
+                        const wordObj = this.wordsWithDefinitions.find(item => item.word.toLowerCase() === currentWord.toLowerCase());
+                        if (wordObj && wordObj.definition) {
+                            textToSpeak = `${currentWord}. Definition: ${wordObj.definition}`;
+                            
+                            // Also update the display to show the definition
+                            this.elements.statusDisplay.textContent = `Definition: ${wordObj.definition}`;
+                        }
+                    }
+                    
+                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
                     utterance.rate = 0.9;
                     this.synth.speak(utterance);
                 }
